@@ -2,34 +2,33 @@ package vmware
 
 import (
 	"context"
-	"github.com/models"
-	"github.com/models/vmware"
-	"github.com/vmware/govmomi"
-	"github.com/vmware/govmomi/property"
-	"github.com/vmware/govmomi/session"
-	"github.com/vmware/govmomi/vim25"
-	"github.com/vmware/govmomi/vim25/methods"
-	"github.com/vmware/govmomi/vim25/soap"
-	"github.com/vmware/govmomi/vim25/types"
 	"net/url"
 	"time"
+
+	modelsVmware "github.com/konveyor/forklift-inventory/models/vmware"
+	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/session"
+	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/vim25/soap"
 )
 
 const (
-	// Connect retry delay
+	// RetryDelay delay between connection retries
 	RetryDelay = time.Second * 5
-	// Maximum number of objects in each update
+	// MaxObjectUpdates maximum number of objects per update
 	MaxObjectUpdates = 10000
 )
 
+// VCenterCollector contains a reference to the VCenter definition and to the govmomi client
 type VCenterCollector struct {
-	vcenter *vmware.Vcenter
+	vcenter *modelsVmware.VCenter
 	client  *govmomi.Client
 }
 
-func New(vcenter vmware.VCenter) *VCenterCollector struct {
-	return &vmware.VCenter{
-		vcenter: vcenter
+// New returns a VCenterCollect struct
+func New(vc modelsVmware.VCenter) *VCenterCollector {
+	return &VCenterCollector{
+		vcenter: &vc,
 	}
 }
 
@@ -38,5 +37,29 @@ func (vcc *VCenterCollector) connect(ctx context.Context) error {
 		_ = vcc.client.Logout(ctx)
 		vcc.client = nil
 	}
-	url.
+	url := url.URL{
+		Scheme: "https",
+		Host:   vcc.vcenter.HostnameOrIp,
+		Path:   "/sdk",
+		User: url.UserPassword(
+			vcc.vcenter.Username,
+			vcc.vcenter.Password,
+		),
+	}
+	soapClient := soap.NewClient(&url, false)
+	soapClient.SetThumbprint(url.Host, vcc.vcenter.SslThumbprint)
+	vimClient, err := vim25.NewClient(ctx, soapClient)
+	if err != nil {
+		return err
+	}
+	vcc.client = &govmomi.Client{
+		SessionManager: session.NewManager(vimClient),
+		Client:         vimClient,
+	}
+	err = vcc.client.Login(ctx, url.User)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
