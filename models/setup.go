@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/konveyor/forklift-inventory/models/vmware"
 )
 
 var DB *gorm.DB
@@ -13,9 +14,9 @@ func ConnectDatabase() {
 		panic("Failed to connect to database.")
 	}
 
-	database.AutoMigrate(&VCenter{})
-	database.AutoMigrate(&Folder{})
-	database.AutoMigrate(&Datacenter{})
+	database.AutoMigrate(&vmware.VCenter{})
+	database.AutoMigrate(&vmware.Folder{})
+	database.AutoMigrate(&vmware.Datacenter{})
 
 	DB = database
 }

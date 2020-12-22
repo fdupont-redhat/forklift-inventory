@@ -7,7 +7,6 @@ import (
 
 type VCenter struct {
 	gorm.Model
-	ID		uint	`json:"id" gorm:"primary_key"`
 	Name		string	`json:"name" gorm:"not null"`
 	Description	string	`json:"description"`
 	HostnameOrIp	string	`json:"hostnameOrIp" gorm:"not null"`
